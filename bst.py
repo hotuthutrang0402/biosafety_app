@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 import base64
 from streamlit_pdf_viewer import pdf_viewer
-from docx2pdf import convert
+import subprocess
 import pythoncom
 
 st.set_page_config(layout="wide")
@@ -77,27 +77,35 @@ def preview_docx_dialog(docx_file):
     pdf_cache_path = PREVIEW_CACHE_DIR / f"{docx_file.stem}_preview.pdf"
     
     if not pdf_cache_path.exists():
-        with st.spinner("Đang chuyển đổi sang PDF..."):
+        with st.spinner("Đang chuẩn bị bản xem trước (LibreOffice)..."):
             try:
-                # Khởi tạo COM cho luồng hiện tại
-                pythoncom.CoInitialize() 
-                convert(str(docx_file), str(pdf_cache_path))
+                # Lệnh chuyển đổi dùng LibreOffice (Chạy được trên Linux/Cloud)
+                cmd = [
+                    "libreoffice",
+                    "--headless",
+                    "--convert-to", "pdf",
+                    "--outdir", str(PREVIEW_CACHE_DIR),
+                    str(docx_file)
+                ]
+                subprocess.run(cmd, check=True)
+                
+                # LibreOffice sẽ tạo file trùng tên nhưng đuôi .pdf, ta đổi tên lại cho đúng cache
+                temp_output = PREVIEW_CACHE_DIR / f"{docx_file.stem}.pdf"
+                if temp_output.exists():
+                    os.rename(temp_output, pdf_cache_path)
+                    
             except Exception as e:
-                st.error(f"Lỗi chuyển đổi: {e}")
-                # Hủy khởi tạo nếu lỗi để tránh rò rỉ bộ nhớ
-                pythoncom.CoUninitialize() 
+                st.error(f"Lỗi hệ thống: {e}. Vui lòng tải file trực tiếp.")
                 return
-            finally:
-                # Luôn đóng khởi tạo sau khi xong
-                pythoncom.CoUninitialize() 
 
-    pdf_viewer(str(pdf_cache_path), width="100%", height=600)
+    if pdf_cache_path.exists():
+        pdf_viewer(str(pdf_cache_path), width="100%", height=600)
     
     if st.button("Đóng"):
         st.rerun()
 
     with open(docx_file, "rb") as f:
-        st.download_button("⬇ Tải xuống file gốc (.docx)", f, file_name=docx_file.name)
+        st.download_button("⬇ Tải xuống (.docx)", f, file_name=docx_file.name)
 
 # ==========================
 # LAYOUT & UI
