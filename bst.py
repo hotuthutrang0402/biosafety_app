@@ -4,7 +4,6 @@ from pathlib import Path
 import base64
 from streamlit_pdf_viewer import pdf_viewer
 import subprocess
-import pythoncom
 
 st.set_page_config(layout="wide")
 
