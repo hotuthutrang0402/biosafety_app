@@ -104,7 +104,7 @@ def get_file_tree(search_term=""):
     for folder_name, sub_path in [("notebook", "Sổ tay an toàn"), ("rule", "Quy định")]:
         folder = PDF_DIR / folder_name
         if folder.exists():
-            for file in folder.glob("*.pdf"):
+            for file in sorted(folder.glob("*.pdf"), key=lambda f: parse_filename(f)):
                 if match(file): 
                     structure[sub_path][file.stem] = file
                 
@@ -112,7 +112,7 @@ def get_file_tree(search_term=""):
     for sub, key in [("technical", "Quy trình kỹ thuật"), ("management", "Quy trình quản lý")]:
         folder = PDF_DIR / "sop" / sub
         if folder.exists():
-            for file in folder.glob("*.pdf"):
+            for file in sorted(folder.glob("*.pdf"), key=lambda f: parse_filename(f)):
                 if match(file): 
                     structure["Quy trình thực hành chuẩn"][key][file.stem] = file     
     return structure
